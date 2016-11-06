@@ -1,2 +1,5 @@
 Wersja 0.1.1
 - dodanie obs³ugi dll x64 dla ASM i C++
+
+Wersja 0.1.2
+- dodanie obs³ugi wybranej przez u¿ytkownika iloœci w¹tków

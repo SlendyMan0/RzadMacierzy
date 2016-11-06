@@ -3,3 +3,9 @@ Wersja 0.1.1
 
 Wersja 0.1.2
 - dodanie obs³ugi wybranej przez u¿ytkownika iloœci w¹tków
+
+06.11.16 Wersja 0.2.1
+
+- rozpoczêcie prac nad implementacj¹ dll w wersji C++
+
+- dodanie timera licz¹cego czas dzia³ania programu

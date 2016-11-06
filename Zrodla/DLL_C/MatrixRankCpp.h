@@ -7,5 +7,5 @@
 #endif
 
 extern "C" {
-	int MATRIXRANK_DLL adder(int a, int b);
+	int MATRIXRANK_DLL adder(int * matrix, int deleteTemplate);
 }

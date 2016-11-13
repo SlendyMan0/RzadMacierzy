@@ -9,3 +9,21 @@ Wersja 0.1.2
 - rozpoczêcie prac nad implementacj¹ dll w wersji C++
 
 - dodanie timera licz¹cego czas dzia³ania programu
+
+13.11.16 Wersja 0.2.2 
+
+DLL C++
+- poprawienie b³êdów w funkcji licz¹cej wyznacznik macierzy
+- dodanie nowej funkcjonalnoœci do funkcji licz¹cej wyznacznik, teraz dzia³a ona dla macierzy z dowoln¹ iloœci¹ wykluczonych rzêdów i kolumn, do póki ich iloœæ jest taka sama
+- rozpoczêcie prac nad funkcj¹ licz¹c¹ rz¹d macierzy
+
+MAIN
+- dodanie prostego warunku zmuszaj¹cego program do wyjœcia, jeœli zosta³ odpalony przez plik exe bez wymaganej iloœci argumentów
+
+Niestety nie jest to zbyt du¿y update, ale algorytm stosowany przeze mnie do liczenia wyznacznika macierzy nie jest zbyt czytelny bez uprzedniego dok³adnego przeœledzenia. 
+G³ówny program chwilowo uruchamia przyk³ad w którym pokazany jest efekt dzia³ania wyznaczania wyznacznika dla macierzy
+4 4 4 4
+4 2 2 3
+4 4 5 6
+4 7 8 9
+z wykluczeniem pierwszego wiersza oraz pierwszej kolumny.

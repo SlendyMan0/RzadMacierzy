@@ -24,19 +24,21 @@
 
 typedef struct {
 	int * matrix;
-	int deleteTemplate;
+	int deleteTemplateColumn, deleteTemplateRow;
 	int rank;
 }Testing;
 
-typedef int(*MYPROC)(int *, int);
+typedef int(*MYPROC)(int *, int, int);
 MYPROC dllFunction;
 
 void __cdecl ThreadProc(void * Args) {
 	Testing * args = (Testing *) Args;
 
-	int det = (dllFunction)(args->matrix, args->deleteTemplate);
+	int det = (dllFunction)(args->matrix, args->deleteTemplateColumn, args->deleteTemplateRow);
 
-	printf("Determinant macierzy %i", det);
+	printf("TEMP: det = %i\n", det);
+
+
 
 	free(args);
 
@@ -54,6 +56,10 @@ void __cdecl ThreadProc(void * Args) {
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	if (argc != 4) {
+		return -1;
+	}
+
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	start = std::chrono::system_clock::now();
 
@@ -100,7 +106,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			_tcout << std::endl << _T("Dll \"") << DLL_TYPE << _T("\" successfully loaded.") << std::endl;
 		}
 
-		dllFunction = (MYPROC)GetProcAddress(hDll, "adder");
+		dllFunction = (MYPROC)GetProcAddress(hDll, "rank");
 
 		if (dllFunction != NULL) {
 			_tcout << std::endl << "Preparing for " << THREAD_COUNT << " threads." << std::endl;
@@ -112,7 +118,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				args = (Testing *)malloc(sizeof(Testing));
 
 				args->matrix = ifinal;
-				args->deleteTemplate = 0;
+				args->deleteTemplateColumn = 1;
+				args->deleteTemplateRow = 1;
 
 				HANDLE hThread = (HANDLE)_beginthread(ThreadProc, 0, (void*)args);
 				threads.push_back(hThread);

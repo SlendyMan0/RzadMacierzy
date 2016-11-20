@@ -85,18 +85,29 @@ int rank(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) {
 		return -1;
 	}
 	else {
-		int rank = determinant(matrix, deleteTemplateColumn, deleteTemplateRow);
+		int det = determinant(matrix, deleteTemplateColumn, deleteTemplateRow);
 
-		if (!rank) {
-			return rank;
-
-			//we need to go deeper
-
-
+		if (det == 0) {
+			int rankNumber = 0;
+			for (int i = 0; i < size; i++) {
+				if (((deleteTemplateColumn >> i) & 1) == 0) {
+					for (int j = 0; j < size; j++) {
+						if (((deleteTemplateRow >> j) & 1) == 0) {
+							int temp = rank(matrix, deleteTemplateColumn + pow(2, i), deleteTemplateRow + pow(2, j));
+							if (temp > rankNumber) {
+								rankNumber = temp;
+								break;
+							}
+						}
+					}
+				}
+			}
+			return rankNumber;
 		}
 		else {
-			return rank;
-			//return size - counterColumn;
+			return size - counterColumn;
 		}
 	}
+
+	//return determinant(matrix, deleteTemplateColumn, deleteTemplateRow);
 }

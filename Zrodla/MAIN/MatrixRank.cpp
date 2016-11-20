@@ -118,15 +118,15 @@ int _tmain(int argc, _TCHAR* argv[])
 				args = (Testing *)malloc(sizeof(Testing));
 
 				args->matrix = ifinal;
-				args->deleteTemplateColumn = 1;
-				args->deleteTemplateRow = 1;
+				args->deleteTemplateColumn = 0;
+				args->deleteTemplateRow = 0;
 
 				HANDLE hThread = (HANDLE)_beginthread(ThreadProc, 0, (void*)args);
 				threads.push_back(hThread);
 			}
 
 			if (threads.size() > 0) {
-				WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 10000);
+				WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 1000000);
 			}
 				
 			//WaitForSingleObject(hThread, INFINITE);

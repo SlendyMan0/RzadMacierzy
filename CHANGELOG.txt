@@ -27,3 +27,11 @@ G³ówny program chwilowo uruchamia przyk³ad w którym pokazany jest efekt dzia³ani
 4 4 5 6
 4 7 8 9
 z wykluczeniem pierwszego wiersza oraz pierwszej kolumny.
+
+20.11.16 Wersja 0.2.3
+
+DLL C++
+- DLL zwraca rz¹d macierzy wczytanej przez g³ówny program z pliku
+- rozpoczête prace nad optymalizacj¹ algorytmu
+
+Zastosowany algorytm dla wypadku najgorszego (du¿a macierz, rzêdu pierwszego) jest doœæ czasoch³onny. Konieczna jest analiza w celu zoptymalizowania prêdkoœci wykonywania programu dla wiêkszych macierzy (ju¿ przy macierzy 7x7 proces przebiega oko³o 30 sekund).

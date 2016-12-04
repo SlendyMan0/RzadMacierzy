@@ -1,2 +1,2 @@
 LIBRARY RzadMacierzyASM
-EXPORTS adder
+EXPORTS rank

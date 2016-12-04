@@ -31,14 +31,16 @@ typedef struct {
 typedef int(*MYPROC)(int *, int, int);
 MYPROC dllFunction;
 
+int result;
+
 void __cdecl ThreadProc(void * Args) {
 	Testing * args = (Testing *) Args;
 
-	int det = (dllFunction)(args->matrix, args->deleteTemplateColumn, args->deleteTemplateRow);
+	int temp = (dllFunction)(args->matrix, args->deleteTemplateColumn, args->deleteTemplateRow);
 
-	printf("TEMP: det = %i\n", det);
-
-
+	if (result < temp) {
+		result = temp;
+	}
 
 	free(args);
 
@@ -48,11 +50,9 @@ void __cdecl ThreadProc(void * Args) {
 //for now program takes three parameters, first is the name of Dll to use, second is number of threads, third is toggle of debug mode.
 //for now the C++ function only returns matrix determinant (and due to some yet undisovered bug, only 2x2 matrix and below)
 //program can be run either by normal debug or by batch file inside x64/Debug folder.
-//TODO:	- look more into threads, as testing showed that they not always work, which is strange. 
-//		- overhaul command arguments, define forces to provide value for DEBUG_MODE or debug cries foul.
-//		- check the algorthm for calculating determinant to find error providing false answers to matrixes higher than 2x2
+//TODO:	- overhaul command arguments, define forces to provide value for DEBUG_MODE or debug cries foul.
 //		- clean up the code a bit, it's a mess
-//		- learn how to access arrays in ASM :)
+//		- moar ASM
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -61,7 +61,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	std::chrono::time_point<std::chrono::system_clock> start, end;
-	start = std::chrono::system_clock::now();
 
 	if (DEBUG_MODE == 1) {
 		_tcout << _T("Debug mode activated.") << std::endl << std::endl;
@@ -88,7 +87,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	int * ifinal = new int[itemp.size() + 1];
-	ifinal[0] = itemp.size() - 1;
+	ifinal[0] = sqrt(itemp.size() - 1);
 
 	for (int i = 1; i < itemp.size(); i++) {
 		_tcout << "I'm here " << i << " time. ";
@@ -111,23 +110,49 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (dllFunction != NULL) {
 			_tcout << std::endl << "Preparing for " << THREAD_COUNT << " threads." << std::endl;
 
-			std::vector < HANDLE > threads;
+			start = std::chrono::system_clock::now();
 
-			for (int i = 0; i < THREAD_COUNT; i++) {
-				Testing * args;
-				args = (Testing *)malloc(sizeof(Testing));
+			result = (dllFunction)(ifinal, 0, 0);
 
-				args->matrix = ifinal;
-				args->deleteTemplateColumn = 0;
-				args->deleteTemplateRow = 0;
+			if (result == -2) {
+				std::vector < HANDLE > threads;
+				std::vector < Testing * > amount;
 
-				HANDLE hThread = (HANDLE)_beginthread(ThreadProc, 0, (void*)args);
-				threads.push_back(hThread);
+				for (int i = 0; i < ifinal[0]; i++) {
+					for (int j = 0; j < ifinal[0]; j++) {
+						Testing * args;
+						args = (Testing *)malloc(sizeof(Testing));
+
+						args->matrix = ifinal;
+						args->deleteTemplateColumn = pow(2, i);
+						args->deleteTemplateRow = pow(2, j);
+
+						amount.push_back(args);
+					}
+				}
+
+				while (1) {
+					for (int i = 0; i < THREAD_COUNT; i++) {
+						if (!amount.empty()) {
+							HANDLE hThread = (HANDLE)_beginthread(ThreadProc, 0, (void*)amount.back());
+							threads.push_back(hThread);
+							amount.pop_back();
+						}
+					}
+
+					if (threads.size() > 0) {
+						WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 1000000);
+						threads.clear();
+					}
+					else {
+						break;
+					}
+				}
 			}
+			
+			printf("TEMP: det = %i\n", result);
 
-			if (threads.size() > 0) {
-				WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 1000000);
-			}
+			end = std::chrono::system_clock::now();
 				
 			//WaitForSingleObject(hThread, INFINITE);
 		}
@@ -139,8 +164,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	else {
 		_tcout << _T("Dll failed to load. Exiting now.") << std::endl;
 	}
-
-	end = std::chrono::system_clock::now();
 
 	std::chrono::duration<double> elapsed_seconds = end - start;
 

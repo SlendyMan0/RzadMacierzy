@@ -35,3 +35,19 @@ DLL C++
 - rozpoczête prace nad optymalizacj¹ algorytmu
 
 Zastosowany algorytm dla wypadku najgorszego (du¿a macierz, rzêdu pierwszego) jest doœæ czasoch³onny. Konieczna jest analiza w celu zoptymalizowania prêdkoœci wykonywania programu dla wiêkszych macierzy (ju¿ przy macierzy 7x7 proces przebiega oko³o 30 sekund).
+
+04.12.16 Wersja 0.3.1
+
+MAIN
+- sensowne podzielenie zadania na w¹tki
+- zmiana w strukturze przesy³anej macierzy, zerowy element zamiast iloœci elementów zawiera teraz wielkoœæ n macierzy kwadratowej nxn
+
+DLL C++
+- dostosowanie algorytmu do zmian w strukturze macierzy
+- dostosowanie algorytmu do zmian w sferze podzia³u zadania na w¹tki
+
+DLL ASM
+- rozpoczêcie prac nad obliczaniem wyznacznika macierzy, z macierzami zamaskowanymi do momentu uzyskania macierzy 1x1 radzi sobie jak marzenie
+- rekurencja jeszcze nie zosta³a ruszona
+
+Okazuje siê, ¿e ASM wcale nie jest (przynajmniej na razie) taki z³y na jakiego wygl¹da. Przekonamy siê póŸniej.

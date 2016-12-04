@@ -72,7 +72,7 @@ int determinant(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) /
 }
 
 int rank(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) {
-	size = sqrt(matrix[0]);
+	size = matrix[0];
 	int counterColumn = 0;
 	int counterRow = 0;
 
@@ -83,6 +83,16 @@ int rank(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) {
 
 	if (counterColumn != counterRow) {
 		return -1;
+	}
+	else if (counterColumn == 0) {
+		int det = determinant(matrix, deleteTemplateColumn, deleteTemplateRow);
+
+		if (det == 0) {
+			return -2;
+		}
+		else {
+			return size;
+		}
 	}
 	else {
 		int det = determinant(matrix, deleteTemplateColumn, deleteTemplateRow);

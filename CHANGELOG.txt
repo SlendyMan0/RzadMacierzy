@@ -51,3 +51,8 @@ DLL ASM
 - rekurencja jeszcze nie zosta³a ruszona
 
 Okazuje siê, ¿e ASM wcale nie jest (przynajmniej na razie) taki z³y na jakiego wygl¹da. Przekonamy siê póŸniej.
+
+11.12.16 Wersja 0.3.2
+
+DLL ASM
+- walka z poprawnym napisaniem algorytmu licz¹cego wyznacznik macierzy wiêkszych od 1x1, póki co nie jestem w stanie znaleŸæ b³êdu

@@ -51,7 +51,6 @@ int determinant(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) /
 	}
 	else {
 		int k = 0;
-		int t = 0;
 
 		for (int i = 0; i < size; i++) {
 			if (!((deleteTemplateRow >> i) & 1)) {
@@ -60,7 +59,6 @@ int determinant(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) /
 		}
 
 		for (int i = 0; i < size; i++) {
-			t++;
 			if (((deleteTemplateColumn >> i) & 1) == 0) {
 				k++;
 				det += pow(-1, (1 + k + firstEmptyRow)) * matrix[(size*firstEmptyRow) + i + 1] * determinant(matrix, deleteTemplateColumn + pow(2, i), deleteTemplateRow + pow(2, firstEmptyRow));

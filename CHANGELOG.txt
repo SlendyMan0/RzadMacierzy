@@ -56,3 +56,13 @@ Okazuje siê, ¿e ASM wcale nie jest (przynajmniej na razie) taki z³y na jakiego w
 
 DLL ASM
 - walka z poprawnym napisaniem algorytmu licz¹cego wyznacznik macierzy wiêkszych od 1x1, póki co nie jestem w stanie znaleŸæ b³êdu
+
+08.01.17 Wersja 0.5
+
+DLL ASM
+- poprawnie liczy zarówno wyznaczniki jak i rz¹d macierzy
+- poprawne wykonywanie na w¹tkach
+- do zaimplementowania instrukcje wektorowe
+
+DLL C++
+- naprawiono dot¹d niewykryty b³¹d w algorytmie, który mimo braku wyrzucanych b³êdów by³ ci¹gle jednak niedopatrzeniem

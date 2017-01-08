@@ -55,13 +55,14 @@ int determinant(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) /
 		for (int i = 0; i < size; i++) {
 			if (!((deleteTemplateRow >> i) & 1)) {
 				firstEmptyRow = i;
+				break;
 			}
 		}
 
 		for (int i = 0; i < size; i++) {
 			if (((deleteTemplateColumn >> i) & 1) == 0) {
 				k++;
-				det += pow(-1, (1 + k + firstEmptyRow)) * matrix[(size*firstEmptyRow) + i + 1] * determinant(matrix, deleteTemplateColumn + pow(2, i), deleteTemplateRow + pow(2, firstEmptyRow));
+				det += pow(-1, (1 + k)) * matrix[(size*firstEmptyRow) + i + 1] * determinant(matrix, deleteTemplateColumn + pow(2, i), deleteTemplateRow + pow(2, firstEmptyRow));
 			}
 		}
 	}
@@ -73,6 +74,8 @@ int rank(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) {
 	size = matrix[0];
 	int counterColumn = 0;
 	int counterRow = 0;
+
+	//return determinant(matrix, deleteTemplateColumn, deleteTemplateRow);
 
 	for (int i = 0; i < size; i++) {
 		counterColumn += (deleteTemplateColumn >> i) & 1; //finding how many columns are excluded
@@ -116,6 +119,4 @@ int rank(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) {
 			return size - counterColumn;
 		}
 	}
-
-	//return determinant(matrix, deleteTemplateColumn, deleteTemplateRow);
 }

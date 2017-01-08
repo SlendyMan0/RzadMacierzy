@@ -42,17 +42,15 @@
 .data
 
 pointerMatrix dword ?
-deleteTemplateRow dword ?
-deleteTemplateColumn dword ?
 sizeMatrix dword ?
 
 .code
 determinant proc
-	mov pointerMatrix, ecx											; saving pointer to matrix to memory
+	LOCAL deleteTemplateRow: dword, deleteTemplateColumn: dword, detValue: sdword
+
+	mov detValue, 0
 	mov deleteTemplateColumn, edx									; saving deleteTemplateColumn to memory
 	mov deleteTemplateRow, r8d										; saving deleteTemplateRow to memory
-	mov eax, dword ptr [ecx]
-	mov sizeMatrix, eax												; saving size of matrix to memory
 	xor r10d, r10d													; clearing R10D for use
 	xor ecx, ecx													; loop counter to zero
 l1:	
@@ -119,29 +117,32 @@ l4:
 	jnz skip
 	inc r10d														; k++
 
-	mov eax, 1														; pow(-1, (1 + k + firstEmptyRow))
-	add eax, r9d													; + firstEmptyRow
+	mov eax, 1														; pow(-1, (1 + k))
 	add eax, r10d													; + k
 	and eax, 1														; checking the paritiy
 	push rax														; saving pairity check for later													
-	mov eax, sizeMatrix												; matrix[(size*firstEmptyRow) + i + 1]
+	mov eax, sizeMatrix												; setting up access for matrix[(size*firstEmptyRow) + i + 1]
 	imul eax, r9d													; (size*firstEmptyRow)
 	add eax, ecx													; + i
 	inc eax															; + 1
 	shl eax, 2														; remembering that dword is 4 bytes
 	add eax, pointerMatrix											; calculating pointer
 	
-	imul r10d, dword ptr [eax]										; pow(-1, (1 + k + firstEmptyRow)) * matrix[(size*firstEmptyRow) + i + 1]
+	mov r11d, dword ptr [eax]										; matrix[(size*firstEmptyRow) + i + 1]
 
-	mov eax, deleteTemplateColumn									; saving data on stack
+	mov eax, deleteTemplateColumn									; saving data on stack			
 	push rax
-	mov eax, deleteTemplateRow										
+	mov eax, deleteTemplateRow						
 	push rax
+	mov eax, detValue						
+	push rax
+	mov detValue, 0
 	push r10
 	push r9
 	push rcx
+	push r11
 
-	mov rdx, 1														; setting second parameter
+	mov edx, 1														; setting second parameter
 	shl edx, cl														; pow(2, i)
 	add edx, deleteTemplateColumn									; + deleteTemplateColumn
 	mov r8d, 1														; setting third parameter
@@ -152,36 +153,163 @@ l4:
 
 	call determinant												; determinant(matrix, deleteTemplateColumn + pow(2, i), deleteTemplateRow + pow(2, firstEmptyRow))
 
+	pop r11
+	imul r11d, eax													; final multiplying
 	pop rcx															; resetting values
 	pop r9
 	pop r10
+	pop rax
+	mov detValue, eax
 	pop rax
 	mov deleteTemplateRow, eax
 	pop rax
 	mov deleteTemplateColumn, eax	
 
-	imul r10d, eax													; final multiplying
+	xor edx, edx													; clearing register
 	pop rax
 	cmp al, 0
 	je aDet
-	sub r11d, r10d
+	sub detValue, r11d
 	jmp skip
 aDet:
-	add r11d, r10d													; det+=
+	add detValue, r11d
 skip:
 	inc ecx															; i++
 	cmp ecx, sizeMatrix												; i=size?
 	jne l4
 
-	mov eax, r11d
+	mov eax, detValue 
+
 	ret
 determinant endp
 
 rank proc
-	xor r11d, r11d
+	LOCAL deleteTemplateRow: dword, deleteTemplateColumn: dword, rankValue: sdword
 
+	mov rankValue, 0
+	mov pointerMatrix, ecx											; saving pointer to matrix to memory
+	mov eax, dword ptr [ecx]
+	mov sizeMatrix, eax												; saving size of matrix to memory
+	mov deleteTemplateColumn, edx									; saving deleteTemplateColumn to memory
+	mov deleteTemplateRow, r8d										; saving deleteTemplateRow to memory
+
+	xor ecx, ecx													; loop counter to zero
+	xor r10d, r10d
+	xor r11d, r11d
+pl1:
+	mov eax, deleteTemplateColumn									;!!!USE VECTOR FUNCTIONS HERE!!!
+	shr eax, cl
+	and eax, 1
+	add r10d, eax
+	mov eax, deleteTemplateRow
+	shr eax, cl
+	and eax, 1
+	add r11d, eax
+	inc ecx
+	cmp ecx, sizeMatrix
+	jne pl1
+
+	cmp r10d, r11d													; (counterColumn != counterRow)
+	je mif1
+	mov eax, -1
+	ret
+
+mif1:
+	cmp r10d, 0
+	jne mif2
+
+	mov ecx, pointerMatrix
+	mov edx, deleteTemplateColumn
+	mov r8d, deleteTemplateRow	
 	call determinant
 
+	cmp eax, 0
+	jne fr1
+	mov eax, -2
+	ret
+fr1:
+	mov eax, sizeMatrix
+	ret
+
+mif2:
+	push r10
+	mov ecx, pointerMatrix
+	mov edx, deleteTemplateColumn
+	mov r8d, deleteTemplateRow	
+	call determinant
+	pop r10
+
+	cmp eax, 0
+	jne fif1
+	
+	xor r8d, r8d
+	xor r9d, r9d
+fl1:
+	mov eax, deleteTemplateColumn	
+	mov ecx, r8d
+	shr eax, cl	
+	and eax, 1
+	jnz fle1
+
+fl2:
+	mov eax, deleteTemplateRow	
+	mov ecx, r9d
+	shr eax, cl	
+	and eax, 1
+	jnz fle2
+
+	push r10
+	push r9
+	push r8
+	mov eax, deleteTemplateColumn	
+	push rax
+	mov eax, deleteTemplateRow						
+	push rax
+
+	mov edx, 1
+	mov ecx, r8d
+	shl edx, cl
+	add edx, deleteTemplateColumn
+	mov r8d, 1
+	mov ecx, r9d
+	shl r8d, cl
+	add r8d, deleteTemplateRow	
+	mov ecx, pointerMatrix
+
+	call rank
+
+	pop rdx
+	mov deleteTemplateRow, edx
+	pop rdx
+	mov deleteTemplateColumn, edx
+	pop r8
+	pop r9
+	pop r10
+
+	cmp eax, rankValue
+	jle fle2
+	mov rankValue, eax
+	jmp omega
+
+fle2:
+	inc r9d
+	cmp r9d, sizeMatrix	
+	jne fl2
+	xor r9d, r9d
+
+fle1:
+	inc r8d															; i++
+	cmp r8d, sizeMatrix												; is i=size
+	jne fl1
+	xor r8d, r8d
+
+omega:
+	mov eax, rankValue
+	ret
+
+fif1:
+	mov eax, sizeMatrix
+	sub eax, r10d	
 	ret
 rank endp
 

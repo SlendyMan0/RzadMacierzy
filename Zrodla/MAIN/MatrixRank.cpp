@@ -18,10 +18,6 @@
 #define _tcout std::cout
 #endif
 
-#define DLL_TYPE argv[1]
-#define THREAD_COUNT _ttoi(argv[2])
-#define DEBUG_MODE _ttoi(argv[3])
-
 typedef struct {
 	int * matrix;
 	int deleteTemplateColumn, deleteTemplateRow;
@@ -47,36 +43,90 @@ void __cdecl ThreadProc(void * Args) {
 	_endthread();
 }
 
-//for now program takes three parameters, first is the name of Dll to use, second is number of threads, third is toggle of debug mode.
-//for now the C++ function only returns matrix determinant (and due to some yet undisovered bug, only 2x2 matrix and below)
-//program can be run either by normal debug or by batch file inside x64/Debug folder.
-//TODO:	- overhaul command arguments, define forces to provide value for DEBUG_MODE or debug cries foul.
-//		- clean up the code a bit, it's a mess
-//		- moar ASM
+//parameters - first must be either -h/-help or dll name
+//second either number of threads (leaving it results in using amount of threads equal amount of cores) 
+//in range between 1-64 (higher values will be lowered to 64) or other parameter:
+//-d enables debug mode (basically more info)
+//-t enables test mode (to test run time of dll)
+//-f must be followed by file name (f.e. -f filename), uses file other than example.txt
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	if (argc != 4) {
-		return -1;
+	if (argc < 2) {
+		_tcout << _T("Error! Not provided with DLL name.") << std::endl;
+		_tcout << _T("Consider using -h or -help to learn how to use this program.");
+		std::system("Pause >nul");
+		exit(-1);
 	}
 
+	_TCHAR* dllName;
+
+	if ((_wcsicmp(argv[1], _T("-h")) == 0) || (_wcsicmp(argv[1], _T("-help")) == 0)) {
+		_tcout << _T("Here should be stuff. But I'm gonna add it later.");
+		std::system("Pause >nul");
+		exit(0);
+	}
+	else {
+		dllName = argv[1];
+	}
+
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	int threadCount = sysinfo.dwNumberOfProcessors;
+	bool debugMode = FALSE;
+	std::wstring filename = L"example";
 	std::chrono::time_point<std::chrono::system_clock> start, end;
+	int argi = 2;
 
-	if (DEBUG_MODE == 1) {
-		_tcout << _T("Debug mode activated.") << std::endl << std::endl;
-		_tcout << _T("There are ") << argc << _T(" arguments:") << std::endl << std::endl;
-
-		for (int i = 0; i < argc; i++) {
-			_tcout << i << _T(" ") << argv[i] << std::endl;
+	if (argv[2][0] != '-') {
+		int temp = _ttoi(argv[2]);
+		if (temp > 0 && temp < 65) {
+			threadCount = temp;
+			argi = 3;
 		}
+		else if (temp > 64) {
+			threadCount = 64;
+		}
+	}
 
-		wchar_t currentPath[MAX_PATH] = {};
-		GetCurrentDirectory(MAX_PATH, currentPath);
-		_tcout << std::endl << _T("Current directory: ") << currentPath << std::endl;		
+	for (argi; argi < argc; argi++) {
+		if ((_wcsicmp(argv[argi], _T("-d")) == 0)) {
+			debugMode = TRUE;
+		}
+		else if ((_wcsicmp(argv[argi], _T("-t")) == 0)) {
+			_tcout << _T("Testing mode activated.") << std::endl << std::endl;
+		}
+		else if ((_wcsicmp(argv[argi], _T("-f")) == 0)) {
+			argi++;
+			if (argi < argc && argv[argi][0] != '-') {
+				filename = argv[argi];
+			}
+			else {
+				_tcout << _T("Error! Not provided with the file name.") << std::endl;
+				_tcout << _T("Consider using -h or -help to learn how to use this program.");
+				std::system("Pause >nul");
+				exit(-1);
+			}
+		}
+		else {
+			_tcout << _T("Error! Inputed ") << argi << _T(". parameter ")<< argv[argi] << _T(" not expected!") << std::endl;
+			_tcout << _T("Consider using -h or -help to learn how to use this program.");
+			std::system("Pause >nul");
+			exit(-1);
+		}
+	}
+
+	if (debugMode == 1) {
+		_tcout << _T("Debug mode activated.") << std::endl << std::endl;
 	}
 
 	std::ifstream ifile;
-	ifile.open("example.txt");
+	std::wstring pathname = L"./Dane testowe/" + filename + L".txt";
+	ifile.open(pathname);
+
+	if (debugMode == 1) {
+		_tcout << _T("Loaded file form: ") << pathname << std::endl << std::endl;
+	}
 
 	std::vector <int> itemp;
 	std::string number;
@@ -89,10 +139,14 @@ int _tmain(int argc, _TCHAR* argv[])
 	int * ifinal = new int[itemp.size() + 1];
 	ifinal[0] = sqrt(itemp.size() - 1);
 
+	if (debugMode == 1) {
+		_tcout << _T("Matrix size ") << ifinal[0] << _T("x") << ifinal[0] << _T(".") << std::endl << std::endl;
+	}
+
 	int counter = 0;
 	for (int i = 1; i < itemp.size(); i++) {
 		ifinal[i] = itemp[i - 1];
-		if (DEBUG_MODE == 1) {
+		if (debugMode == 1) {
 			counter++;
 			_tcout << ifinal[i] << " ";
 			if (counter == ifinal[0]){
@@ -104,19 +158,19 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	HINSTANCE hDll;
-	hDll = LoadLibrary(DLL_TYPE);
+	hDll = LoadLibrary(dllName);
 
 	DWORD lastError = GetLastError();
 
 	if (hDll != NULL) {
-		if (DEBUG_MODE) {
-			_tcout << std::endl << _T("Dll \"") << DLL_TYPE << _T("\" successfully loaded.") << std::endl;
+		if (debugMode) {
+			_tcout << std::endl << _T("Dll \"") << dllName << _T("\" successfully loaded.") << std::endl;
 		}
 
 		dllFunction = (MYPROC)GetProcAddress(hDll, "rank");
 
 		if (dllFunction != NULL) {
-			_tcout << std::endl << "Preparing for " << THREAD_COUNT << " threads." << std::endl;
+			_tcout << std::endl << "Preparing for " << threadCount << " threads." << std::endl;
 
 			start = std::chrono::system_clock::now();
 
@@ -140,7 +194,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 
 				while (1) {
-					for (int i = 0; i < THREAD_COUNT; i++) {
+					for (int i = 0; i < threadCount; i++) {
 						if (!amount.empty()) {
 							HANDLE hThread = (HANDLE)_beginthread(ThreadProc, 0, (void*)amount.back());
 							threads.push_back(hThread);
@@ -161,8 +215,6 @@ int _tmain(int argc, _TCHAR* argv[])
 			printf("TEMP: det = %i\n", value);
 
 			end = std::chrono::system_clock::now();
-				
-			//WaitForSingleObject(hThread, INFINITE);
 		}
 		else {
 			_tcout << std::endl << _T("Function failed to load. Exiting now.") << std::endl;

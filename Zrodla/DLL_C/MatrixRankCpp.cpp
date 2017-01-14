@@ -40,7 +40,7 @@ int determinant(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) /
 	if ((size - counterColumn) == 1) { //checking for matrix 1x1
 		int x, y;
 		for (int i = 0; i < size; i++) {
-			if (((deleteTemplateRow >> i) & 1) == 0) { //searching for 0 in binary representation of deleteTemplate
+			if (((deleteTemplateRow >> size - i - 1) & 1) == 0) { //searching for 0 in binary representation of deleteTemplate
 				x = i;
 			}
 			if (((deleteTemplateColumn >> i) & 1) == 0) { //searching for 0 in binary representation of deleteTemplate
@@ -53,7 +53,7 @@ int determinant(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) /
 		int k = 0;
 
 		for (int i = 0; i < size; i++) {
-			if (!((deleteTemplateRow >> i) & 1)) {
+			if (!((deleteTemplateRow >> size - i - 1) & 1)) {
 				firstEmptyRow = i;
 				break;
 			}
@@ -62,7 +62,8 @@ int determinant(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) /
 		for (int i = 0; i < size; i++) {
 			if (((deleteTemplateColumn >> i) & 1) == 0) {
 				k++;
-				det += pow(-1, (1 + k)) * matrix[(size*firstEmptyRow) + i + 1] * determinant(matrix, deleteTemplateColumn + pow(2, i), deleteTemplateRow + pow(2, firstEmptyRow));
+
+				det += pow(-1, (1 + k)) * matrix[(size*firstEmptyRow) + i + 1] * determinant(matrix, deleteTemplateColumn + pow(2, i), deleteTemplateRow + pow(2, size - firstEmptyRow - 1));
 			}
 		}
 	}
@@ -98,7 +99,7 @@ int rank(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) {
 	else {
 		int det = determinant(matrix, deleteTemplateColumn, deleteTemplateRow);
 
-		if (det == 0) {
+		if ((det == 0) && (counterColumn != (size - 1))) {
 			int rankNumber = 0;
 			for (int i = 0; i < size; i++) {
 				if (((deleteTemplateColumn >> i) & 1) == 0) {
@@ -107,7 +108,6 @@ int rank(int * matrix, int deleteTemplateColumn, int deleteTemplateRow) {
 							int temp = rank(matrix, deleteTemplateColumn + pow(2, i), deleteTemplateRow + pow(2, j));
 							if (temp > rankNumber) {
 								rankNumber = temp;
-								break;
 							}
 						}
 					}

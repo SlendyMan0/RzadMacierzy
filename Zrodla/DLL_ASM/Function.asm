@@ -1,44 +1,3 @@
-; GENERAL PURPOSE REGISTERS:
-;
-; legacy registers: RAX, RBX, RCX, RDX, RBP, RSI, RDI, RSP
-; to get to 32 bit part (DWORD) use E instead of R
-; to get to 16 bit part (WORD), remove R altogether
-; to get to 8 bit low part (BYTE), remove R and replace X with L
-; to get to 8 bit high part (BYTE), remove R and replace X with H
-;
-; new registers   : R8 , R9 , R10, R11, R12, R13, R14, R15
-; to get to 32 bit part (DWORD) add D
-; to get to 16 bit part (WORD), add W
-; to get to 8 bit low part (BYTE), add B
-; you can't get to 8 bit high part
-;
-; Apparently despite the name "general purpose", you shouldn't use RBX, RDI, RSI, RBP, R12-15, for some yet unknown for me reason
-;
-; PASSED ARGUMENTS:
-;
-; 1 parameter: RCX
-; 2 parameter: RDX
-; 3 parameter: R8
-; 4 parameter: R9
-; rest in stack
-;
-; DATA SEGMENT
-;
-; because I'm an idiot and forgot about it.
-; .data to start data segment, before code segment
-; [label] [size] [initialValue/?] - if you dont care about value, use ?
-;
-; sizes:
-;
-; BYTE: db, byte, sbyte(for signed byte)
-; WORD: dw, word, sword(for signed word)
-; DWORD: dd, dword, sdword(for signed dword)
-; QWORD: qd, qword, sqword(for signed qword)
-;
-; arrays:
-;
-; [label] [size] [numberOfElements] dup ([initialValueOfEachElement]) - 1d array
-; [label] [size] [numberOfRows] dup ([numberOfColumns] dup [initialValueOfEachElement]) - 2d array
 .data
 
 pointerMatrix dword ?
@@ -51,10 +10,11 @@ determinant proc
 	mov detValue, 0
 	mov deleteTemplateColumn, edx									; saving deleteTemplateColumn to memory
 	mov deleteTemplateRow, r8d										; saving deleteTemplateRow to memory
+
 	xor r10d, r10d													; clearing R10D for use
 	xor ecx, ecx													; loop counter to zero
 l1:	
-	mov eax, deleteTemplateColumn									; copying deleteTemplateColumn
+	mov eax, edx													; copying deleteTemplateColumn
 	shr eax, cl														; shifing deleteTemplateColumn to compare bits
 	and eax, 1														; comparing bits
 	add r10d, eax													; if bit was 1 it is added to the counter
@@ -67,23 +27,37 @@ l1:
 	cmp eax, 1														; is it 1x1 matrix?
 	jne j1															; if not 1x1 matrix, jump
 	xor ecx, ecx													; loop counter to zero
-l2: 
-	mov eax, deleteTemplateColumn									; copying deleteTemplateColumn
-	shr eax, cl														; shifing deleteTemplateColumn to compare bits
-	and eax, 1														; comparing bits
-	jz jcf															; jumping to set the number correctly (jump column found)
-jbc:
-	mov eax, deleteTemplateRow										; copying deleteTemplateRow
-	shr eax, cl														; shifing deleteTemplateColumn to compare bits
-	and eax, 1														; comparing bits
-	jz jrf															; jumping to set the number correctly (jump row found)
-jbr:
+	xor r9d, r9d
+	xor r10d, r10d
+
+	movd mm0, edx
+	movd mm1, r8d
+	punpckldq mm0, mm1
+l2:
+	movd mm6, ecx
+	movq mm1, mm0
+	psrld mm1, mm6
+	pandn mm1, mm7
+
+	punpckldq mm6, mm6
+	pmullw mm1, mm6
+
+	movd eax, mm1
+	punpckhdq mm1, mm1
+	movd edx, mm1
+
+	add r9d, eax
+	add r10d, edx													; the index must be subtracted from size of the matrix and further decreased by 1
+
 	inc ecx															; i++
 	cmp ecx, sizeMatrix												; is i=size
 	jne l2	
 
-	mov ecx, sizeMatrix												; preparing to calculate the exact position of number to return 
-	imul ecx, r10d													; multiplying by row index
+	mov ecx, sizeMatrix												; preparing to calculate the exact position of number to return
+	mov edx, ecx													
+	sub edx, r10d
+	dec edx 
+	imul ecx, edx													; multiplying by now correct row index
 	add ecx, r9d													; adding column index
 	inc ecx															; remembering that first position in matrix is it's size
 	shl ecx, 2														; remembering that dword is 4 bytes
@@ -91,23 +65,20 @@ jbr:
 
 	mov eax, dword ptr [ecx]										; returning value
 	ret
-jcf:
-	mov r9d, ecx													; saving column index
-	jmp jbc															; jumping back (jump back column)
-jrf:
-	mov r10d, ecx													; saving row index
-	jmp jbr															; jumping back (jump back row)
 j1:																	
-	xor ecx, ecx													; loop counter to zero
+	xor edx, edx													; loop counter to zero
 l3:																	; finding first non-excluded row
 	mov eax, deleteTemplateRow										; copying deleteTemplateRow
+	mov ecx, sizeMatrix
+	sub ecx, edx
+	dec ecx
 	shr eax, cl														; shifing deleteTemplateRow to compare bits
-	inc ecx															; i++
+	inc edx															; i++
 	and eax, 1														; comparing bits
 	jnz l3															; jump if excluded
 
-	dec ecx															; i++ was not needed, non-excluded row found
-	mov r9d, ecx													; saving firstEmptyRow
+	dec edx															; i++ was not needed, non-excluded row found
+	mov r9d, edx													; saving firstEmptyRow
 	xor ecx, ecx													; loop counter to zero
 	xor r10d, r10d													; clearing k counter
 l4:
@@ -146,7 +117,9 @@ l4:
 	shl edx, cl														; pow(2, i)
 	add edx, deleteTemplateColumn									; + deleteTemplateColumn
 	mov r8d, 1														; setting third parameter
-	mov ecx, r9d
+	mov ecx, sizeMatrix
+	sub ecx, r9d
+	dec ecx
 	shl r8d, cl														; pow(2, firstEmptyRow)
 	add r8d, deleteTemplateRow										; + deleteTemplateRow
 	mov ecx, pointerMatrix											; setting first parameter
@@ -183,31 +156,43 @@ skip:
 	ret
 determinant endp
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 rank proc
-	LOCAL deleteTemplateRow: dword, deleteTemplateColumn: dword, rankValue: sdword
+	LOCAL deleteTemplateRow2: dword, deleteTemplateColumn2: dword, rankValue: sdword
 
 	mov rankValue, 0
 	mov pointerMatrix, ecx											; saving pointer to matrix to memory
 	mov eax, dword ptr [ecx]
 	mov sizeMatrix, eax												; saving size of matrix to memory
-	mov deleteTemplateColumn, edx									; saving deleteTemplateColumn to memory
-	mov deleteTemplateRow, r8d										; saving deleteTemplateRow to memory
+	mov deleteTemplateColumn2, edx									; saving deleteTemplateColumn to memory
+	mov deleteTemplateRow2, r8d										; saving deleteTemplateRow to memory
 
 	xor ecx, ecx													; loop counter to zero
-	xor r10d, r10d
-	xor r11d, r11d
+
+	mov eax, 1
+	movd mm7, eax
+	punpckldq mm7, mm7
+	movd mm0, edx
+	movd mm1, r8d
+	punpckldq mm0, mm1
+	pxor mm2, mm2
+
 pl1:
-	mov eax, deleteTemplateColumn									;!!!USE VECTOR FUNCTIONS HERE!!!
-	shr eax, cl
-	and eax, 1
-	add r10d, eax
-	mov eax, deleteTemplateRow
-	shr eax, cl
-	and eax, 1
-	add r11d, eax
+	movd mm6, ecx
+	movq mm1, mm0
+	psrld mm1, mm6
+	pand mm1, mm7
+	paddd mm2, mm1
 	inc ecx
 	cmp ecx, sizeMatrix
 	jne pl1
+
+	movd r10d, mm2
+	punpckhdq mm2, mm2
+	movd r11d, mm2
 
 	cmp r10d, r11d													; (counterColumn != counterRow)
 	je mif1
@@ -219,8 +204,8 @@ mif1:
 	jne mif2
 
 	mov ecx, pointerMatrix
-	mov edx, deleteTemplateColumn
-	mov r8d, deleteTemplateRow	
+	mov edx, deleteTemplateColumn2
+	mov r8d, deleteTemplateRow2
 	call determinant
 
 	cmp eax, 0
@@ -234,25 +219,29 @@ fr1:
 mif2:
 	push r10
 	mov ecx, pointerMatrix
-	mov edx, deleteTemplateColumn
-	mov r8d, deleteTemplateRow	
+	mov edx, deleteTemplateColumn2
+	mov r8d, deleteTemplateRow2	
 	call determinant
 	pop r10
 
 	cmp eax, 0
 	jne fif1
+	mov eax, sizeMatrix
+	dec eax
+	cmp eax, r10d
+	je fif1
 	
 	xor r8d, r8d
 	xor r9d, r9d
 fl1:
-	mov eax, deleteTemplateColumn	
+	mov eax, deleteTemplateColumn2	
 	mov ecx, r8d
 	shr eax, cl	
 	and eax, 1
 	jnz fle1
 
 fl2:
-	mov eax, deleteTemplateRow	
+	mov eax, deleteTemplateRow2	
 	mov ecx, r9d
 	shr eax, cl	
 	and eax, 1
@@ -261,27 +250,27 @@ fl2:
 	push r10
 	push r9
 	push r8
-	mov eax, deleteTemplateColumn	
+	mov eax, deleteTemplateColumn2	
 	push rax
-	mov eax, deleteTemplateRow						
+	mov eax, deleteTemplateRow2						
 	push rax
 
 	mov edx, 1
 	mov ecx, r8d
 	shl edx, cl
-	add edx, deleteTemplateColumn
+	add edx, deleteTemplateColumn2
 	mov r8d, 1
 	mov ecx, r9d
 	shl r8d, cl
-	add r8d, deleteTemplateRow	
+	add r8d, deleteTemplateRow2	
 	mov ecx, pointerMatrix
 
 	call rank
 
 	pop rdx
-	mov deleteTemplateRow, edx
+	mov deleteTemplateRow2, edx
 	pop rdx
-	mov deleteTemplateColumn, edx
+	mov deleteTemplateColumn2, edx
 	pop r8
 	pop r9
 	pop r10
@@ -289,7 +278,6 @@ fl2:
 	cmp eax, rankValue
 	jle fle2
 	mov rankValue, eax
-	jmp omega
 
 fle2:
 	inc r9d

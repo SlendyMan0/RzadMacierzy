@@ -31,15 +31,15 @@ typedef struct {
 typedef int(*MYPROC)(int *, int, int);
 MYPROC dllFunction;
 
-int result;
+int value;
 
 void __cdecl ThreadProc(void * Args) {
 	Testing * args = (Testing *) Args;
 
 	int temp = (dllFunction)(args->matrix, args->deleteTemplateColumn, args->deleteTemplateRow);
 
-	if (result < temp) {
-		result = temp;
+	if (value < temp) {
+		value = temp;
 	}
 
 	free(args);
@@ -89,10 +89,18 @@ int _tmain(int argc, _TCHAR* argv[])
 	int * ifinal = new int[itemp.size() + 1];
 	ifinal[0] = sqrt(itemp.size() - 1);
 
+	int counter = 0;
 	for (int i = 1; i < itemp.size(); i++) {
-		_tcout << "I'm here " << i << " time. ";
 		ifinal[i] = itemp[i - 1];
-		_tcout << ifinal[i] << std::endl;
+		if (DEBUG_MODE == 1) {
+			counter++;
+			_tcout << ifinal[i] << " ";
+			if (counter == ifinal[0]){
+				_tcout << std::endl;
+				counter = 0;
+			}
+		}
+
 	}
 
 	HINSTANCE hDll;
@@ -112,9 +120,9 @@ int _tmain(int argc, _TCHAR* argv[])
 
 			start = std::chrono::system_clock::now();
 
-			result = (dllFunction)(ifinal, 0, 0);
+			value = (dllFunction)(ifinal, 0, 0);
 
-			if (result == -2) {
+			if (value == -2) {
 				std::vector < HANDLE > threads;
 				std::vector < Testing * > amount;
 
@@ -150,7 +158,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 			}
 			
-			printf("TEMP: det = %i\n", result);
+			printf("TEMP: det = %i\n", value);
 
 			end = std::chrono::system_clock::now();
 				

@@ -62,7 +62,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	_TCHAR* dllName;
 
 	if ((_wcsicmp(argv[1], _T("-h")) == 0) || (_wcsicmp(argv[1], _T("-help")) == 0)) {
-		_tcout << _T("Here should be stuff. But I'm gonna add it later.");
+		_tcout << _T("To run the program properly, you need to provide it with the name of DLL as a first parameter.") << std::endl;
+		_tcout << _T("If you want to change the amount of threads used from default (number of your cores), provide a number as second parameter.") << std::endl << std::endl;
+		_tcout << _T("There are also additional parameters:") << std::endl;
+		_tcout << _T("   -d            enables debug mode, for more informations displayed") << std::endl;
+		_tcout << _T("   -t            enables test mode, for testing run time") << std::endl;
+		_tcout << _T("   -f filename   change filename to name of file from which you want to load the matrix (for example how to make your own matrix, check example.txt)") << std::endl;
 		std::system("Pause >nul");
 		exit(0);
 	}
@@ -74,9 +79,11 @@ int _tmain(int argc, _TCHAR* argv[])
 	GetSystemInfo(&sysinfo);
 	int threadCount = sysinfo.dwNumberOfProcessors;
 	bool debugMode = FALSE;
+	bool testMode = FALSE;
 	std::wstring filename = L"example";
 	std::chrono::time_point<std::chrono::system_clock> start, end;
 	int argi = 2;
+	std::vector<double> elapsedTimer;
 
 	if (argv[2][0] != '-') {
 		int temp = _ttoi(argv[2]);
@@ -95,6 +102,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 		else if ((_wcsicmp(argv[argi], _T("-t")) == 0)) {
 			_tcout << _T("Testing mode activated.") << std::endl << std::endl;
+			testMode = TRUE;
 		}
 		else if ((_wcsicmp(argv[argi], _T("-f")) == 0)) {
 			argi++;
@@ -124,8 +132,17 @@ int _tmain(int argc, _TCHAR* argv[])
 	std::wstring pathname = L"./Dane testowe/" + filename + L".txt";
 	ifile.open(pathname);
 
-	if (debugMode == 1) {
-		_tcout << _T("Loaded file form: ") << pathname << std::endl << std::endl;
+	if (ifile.is_open()) {
+		if (debugMode == 1) {
+			_tcout << _T("Loaded file form: ") << pathname << std::endl << std::endl;
+		}
+	}
+	else {
+		_tcout << _T("Error! File \"") << filename << _T("\" could not be opened.") << std::endl;
+		_tcout << _T("Are you sure you inputed the correct file name?") << std::endl;
+		_tcout << _T("Consider using -h or -help to learn how to use this program.");
+		std::system("Pause >nul");
+		exit(-1);
 	}
 
 	std::vector <int> itemp;
@@ -170,67 +187,136 @@ int _tmain(int argc, _TCHAR* argv[])
 		dllFunction = (MYPROC)GetProcAddress(hDll, "rank");
 
 		if (dllFunction != NULL) {
-			_tcout << std::endl << "Preparing for " << threadCount << " threads." << std::endl;
+			if (debugMode) {
+				_tcout << std::endl << "Preparing for " << threadCount << " threads." << std::endl << std::endl;
+			}
 
-			start = std::chrono::system_clock::now();
+			if (testMode) {
+				std::system("Pause >nul");
+			}
 
-			value = (dllFunction)(ifinal, 0, 0);
+			int counter = 0;
+			while (1) {
+				counter++;
 
-			if (value == -2) {
-				std::vector < HANDLE > threads;
-				std::vector < Testing * > amount;
+				start = std::chrono::system_clock::now();
 
-				for (int i = 0; i < ifinal[0]; i++) {
-					for (int j = 0; j < ifinal[0]; j++) {
-						Testing * args;
-						args = (Testing *)malloc(sizeof(Testing));
+				value = (dllFunction)(ifinal, 0, 0);
 
-						args->matrix = ifinal;
-						args->deleteTemplateColumn = pow(2, i);
-						args->deleteTemplateRow = pow(2, j);
+				if (value == -2) {
+					std::vector < HANDLE > threads;
+					std::vector < Testing * > amount;
 
-						amount.push_back(args);
-					}
-				}
+					for (int i = 0; i < ifinal[0]; i++) {
+						for (int j = 0; j < ifinal[0]; j++) {
+							Testing * args;
+							args = (Testing *)malloc(sizeof(Testing));
 
-				while (1) {
-					for (int i = 0; i < threadCount; i++) {
-						if (!amount.empty()) {
-							HANDLE hThread = (HANDLE)_beginthread(ThreadProc, 0, (void*)amount.back());
-							threads.push_back(hThread);
-							amount.pop_back();
+							args->matrix = ifinal;
+							args->deleteTemplateColumn = pow(2, i);
+							args->deleteTemplateRow = pow(2, j);
+
+							amount.push_back(args);
 						}
 					}
 
-					if (threads.size() > 0) {
-						WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 1000000);
-						threads.clear();
+					while (1) {
+						for (int i = 0; i < threadCount; i++) {
+							if (!amount.empty()) {
+								HANDLE hThread = (HANDLE)_beginthread(ThreadProc, 0, (void*)amount.back());
+								threads.push_back(hThread);
+								amount.pop_back();
+							}
+						}
+
+						if (threads.size() > 0) {
+							WaitForMultipleObjects(threads.size(), &threads[0], TRUE, 1000000);
+							threads.clear();
+						}
+						else {
+							break;
+						}
 					}
-					else {
-						break;
+				}		
+
+				end = std::chrono::system_clock::now();
+
+				std::chrono::duration<double> elapsed_seconds = end - start;
+
+				if (!testMode) {
+					_tcout << _T("The rank of the given matrix is: ") << value << std::endl << std::endl;
+					_tcout << _T("elapsed time: ") << elapsed_seconds.count() << _T("s") << std::endl;
+				}
+				else if (debugMode) {
+					if (counter == 1 && testMode) {
+						_tcout << _T("The rank of the given matrix is: ") << value << std::endl << std::endl;
 					}
+					_tcout << _T("elapsed time: ") << elapsed_seconds.count() << _T("s      value = ") << value << std::endl;
+				}
+
+				
+
+				if (testMode) {
+					elapsedTimer.push_back(elapsed_seconds.count());
+				}
+				
+				if (!testMode || counter > 99) {
+					break;
 				}
 			}
-			
-			printf("TEMP: det = %i\n", value);
-
-			end = std::chrono::system_clock::now();
 		}
 		else {
-			_tcout << std::endl << _T("Function failed to load. Exiting now.") << std::endl;
+			_tcout << std::endl << _T("Error! Function failed to load.") << std::endl;
+			_tcout << _T("Are you sure you provided the program with correct DLL?") << std::endl;
+			_tcout << _T("Consider using -h or -help to learn how to use this program.");
+			std::system("Pause >nul");
+			exit(-1);
 		}
 
 	}
 	else {
-		_tcout << _T("Dll failed to load. Exiting now.") << std::endl;
+		_tcout << _T("Error! Dll failed to load.") << std::endl;
+		_tcout << _T("Are you sure you provided program with correct DLL name?") << std::endl;
+		_tcout << _T("Consider using -h or -help to learn how to use this program.");
+		std::system("Pause >nul");
+		exit(-1);
 	}
 
-	std::chrono::duration<double> elapsed_seconds = end - start;
+	if (testMode) {
+		double average = 0;
+		double min = 0;
+		double max = 0;
 
-	_tcout << "elapsed time: " << elapsed_seconds.count() << "s\n";
+		for (int i = 0; i < 100; i++) {
+			average += elapsedTimer[i];
+
+			if (i == 0) {
+				min = elapsedTimer[i];
+				max = elapsedTimer[i];
+			}
+			else {
+				if (min > elapsedTimer[i]) {
+					min = elapsedTimer[i];
+				}
+
+				if (max < elapsedTimer[i]) {
+					max = elapsedTimer[i];
+				}
+			}
+		}
+
+		average = average / 100;
+
+		_tcout << std::endl;
+		_tcout << _T("Average time: ") << average << _T("s") << std::endl;
+		_tcout << _T("         Min: ") << min << _T("s") << std::endl;
+		_tcout << _T("         Max: ") << max << _T("s") << std::endl;
+	}
+
 	std::system("Pause >nul");
 	delete[] ifinal;
 	itemp.clear();
+	elapsedTimer.clear();
 
 	return 0;
 }

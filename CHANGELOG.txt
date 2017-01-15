@@ -84,3 +84,9 @@ MAIN
 - domyœlne wykrywanie iloœci rdzeni i tworzenie takiej iloœci w¹tków
 - bardziej "user-friendly" parametry
 - zabezpieczanie przed b³êdami u¿ytkownika
+
+16.01.17 Wersja 0.7.1
+
+MAIN
+- dodanie trybu testów
+- dodanie pomocy

@@ -90,3 +90,6 @@ MAIN
 MAIN
 - dodanie trybu testów
 - dodanie pomocy
+
+WERSJA 1.0
+- có¿, zapomnia³em o tym dpoisku...

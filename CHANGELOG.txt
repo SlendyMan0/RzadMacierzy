@@ -93,3 +93,6 @@ MAIN
 
 WERSJA 1.0
 - có¿, zapomnia³em o tym dpoisku...
+
+WERSJA 1.0.1
+- obs³uga kilku pominiêtych b³êdów

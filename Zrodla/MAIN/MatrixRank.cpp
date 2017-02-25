@@ -50,6 +50,9 @@ void __cdecl ThreadProc(void * Args) {
 //-t enables test mode (to test run time of dll)
 //-f must be followed by file name (f.e. -f filename), uses file other than example.txt
 
+
+//dodaæ freelibrary >...<
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	if (argc < 2) {
@@ -85,7 +88,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	int argi = 2;
 	std::vector<double> elapsedTimer;
 
-	if (argv[2][0] != '-') {
+	if ((argc > 2) && (argv[2][0] != '-')) {
 		int temp = _ttoi(argv[2]);
 		if (temp > 0 && temp < 65) {
 			threadCount = temp;
@@ -153,8 +156,24 @@ int _tmain(int argc, _TCHAR* argv[])
 		itemp.push_back(atoi(number.c_str()));
 	}
 
+	if (itemp.size() == 1) {
+		_tcout << _T("Error! File \"") << filename << _T("\" is empty.") << std::endl;
+		_tcout << _T("Are you sure you inputed a matrix correctly?") << std::endl;
+		_tcout << _T("Consider using -h or -help to learn how to use this program.");
+		std::system("Pause >nul");
+		exit(-1);
+	}
+
 	int * ifinal = new int[itemp.size() + 1];
 	ifinal[0] = sqrt(itemp.size() - 1);
+
+	if ((ifinal[0] *ifinal[0]) != (itemp.size() - 1)) {
+		_tcout << _T("Error! File \"") << filename << _T("\" is filled incorectly.") << std::endl;
+		_tcout << _T("Are you sure you followed the example how to fill in input file?") << std::endl;
+		_tcout << _T("Consider using -h or -help to learn how to use this program.");
+		std::system("Pause >nul");
+		exit(-1);
+	}
 
 	if (debugMode == 1) {
 		_tcout << _T("Matrix size ") << ifinal[0] << _T("x") << ifinal[0] << _T(".") << std::endl << std::endl;
@@ -317,6 +336,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	delete[] ifinal;
 	itemp.clear();
 	elapsedTimer.clear();
+	FreeLibrary(hDll);
 
 	return 0;
 }
